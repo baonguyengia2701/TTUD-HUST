@@ -1,57 +1,47 @@
-#include<bits/stdc++.h>
+#include <bits/stdc++.h>
+ 
 using namespace std;
+ 
+const int maxN = 10010; // Số lượng đỉnh tối đa
 
-void DFS1(int v, bool visited[], stack<int> &Stack, vector<int> adj[]) { // DFS theo chiều sâu
-    visited[v] = true; // Đánh dấu nút đã được thăm
-    for(auto i = adj[v].begin(); i != adj[v].end(); ++i) // Duyệt qua các nút kề với nút v
-        if(!visited[*i]) // Nếu nút chưa được thăm
-            DFS1(*i, visited, Stack, adj);
-    Stack.push(v);
-}
-
-void DFS2(int v, bool visited[], vector<int> adj[]) { // DFS theo chiều sâu
-    visited[v] = true; // Đánh dấu nút đã được thăm
-    for(auto i = adj[v].begin(); i != adj[v].end(); ++i)   // Duyệt qua các nút kề với nút v
-        if(!visited[*i]) // Nếu nút chưa được thăm
-            DFS2(*i, visited, adj);  // Thăm nút đó
-}
-
-int findSCCs(int V, vector<int> adj[]) { // Tìm số lượng thành phần liên thông mạnh
-    stack<int> Stack; //    Stack để lưu trữ các nút
-    bool visited[V]; // Mảng visited để đánh dấu các nút đã được thăm
-    memset(visited, false, sizeof(visited)); // Khởi tạo mảng visited
-
-    for(int i = 0; i < V; i++) // Duyệt qua tất cả các nút
-        if(visited[i] == false) //  Nếu nút chưa được thăm
-            DFS1(i, visited, Stack, adj); // Thăm nút đó
-
-    vector<int> adjT[V];    // Ma trận kề của đồ thị chuyển vị
-    for(int v = 0; v < V; v++) // Duyệt qua tất cả các nút
-        for(auto i = adj[v].begin(); i != adj[v].end(); ++i) // Duyệt qua các nút kề với nút v
-            adjT[*i].push_back(v); //   Thêm nút v vào danh sách kề của nút *i
-
-    memset(visited, false, sizeof(visited)); // Khởi tạo mảng visited
-    int count = 0; //   Biến đếm số lượng thành phần liên thông mạnh
-    while(!Stack.empty()) { // Duyệt qua tất cả các nút trong Stack
-        int v = Stack.top();// Lấy nút đầu tiên trong Stack
-        Stack.pop(); // Xóa nút đó khỏi Stack
-        if(visited[v] == false) { // Nếu nút chưa được thăm
-            DFS2(v, visited, adjT); // Thăm nút đó
-            count++;// Tăng biến đếm lên 1
+int n, m; // Số lượng đỉnh và số lượng cạnh
+bool joint[maxN]; // Mảng đánh dấu các đỉnh nút
+int timeDfs = 0, bridge = 0; // Biến thời gian DFS và số lượng cầu
+int low[maxN], num[maxN]; // Mảng thời gian thăm sớm nhất và thời gian thăm của đỉnh u
+vector <int> g[maxN]; // Danh sách kề của đỉnh u
+ 
+void dfs(int u, int pre) {
+    int child = 0; // Số lượng con trực tiếp của đỉnh u trong cây DFS
+    num[u] = low[u] = ++timeDfs; // Gán thời gian thăm và thời gian thăm sớm nhất của đỉnh u
+    for (int v : g[u]) {     // Duyệt qua các đỉnh kề với đỉnh u
+        if (v == pre) continue; // Nếu v là đỉnh cha của u thì bỏ qua
+        if (!num[v]) {
+            dfs(v, u); // Gọi đệ quy DFS từ v
+            low[u] = min(low[u], low[v]); // Gán thời gian thăm sớm nhất của đỉnh u
+            if (low[v] == num[v]) bridge++; // Nếu thời gian thăm sớm nhất của v bằng thời gian thăm của v thì cạnh (u, v) là cầu
+            child++; // Tăng số lượng con lên 1
+            if (u == pre) { // Nếu u là đỉnh gốc của cây DFS
+                if (child > 1) joint[u] = true; // Nếu u có nhiều hơn 1 con thì u là điểm nút
+            }
+            else if (low[v] >= num[u]) joint[u] = true; // Nếu thời gian thăm sớm nhất của v lớn hơn hoặc bằng thời gian thăm của u thì u là điểm nút
         }
+        else low[u] = min(low[u], num[v]); // Gán thời gian thăm sớm nhất của u
     }
-    return count; //      Trả về số lượng thành phần liên thông mạnh
 }
-
+ 
 int main() {
-    int N, M;
-    cin >> N >> M;
-    vector<int> adj[N];
-    for(int i = 0; i < M; i++) {
+    cin >> n >> m;
+    for (int i = 1; i <= m; i++) {
         int u, v;
         cin >> u >> v;
-        adj[u-1].push_back(v-1); // giả sử các nút được đánh số từ 1
+        g[u].push_back(v);
+        g[v].push_back(u);
     }
-    cout << findSCCs(N, adj);
-    return 0;
-}
+    for (int i = 1; i <= n; i++) 
+        if (!num[i]) dfs(i, i);
+
+    int cntJoint = 0;
+    for (int i = 1; i <= n; i++) cntJoint += joint[i];
+
+    cout << cntJoint << ' ' << bridge;
+} 

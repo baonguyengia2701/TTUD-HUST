@@ -11,7 +11,6 @@ struct Point {
 int findShortestPath(vector<vector<int>>& maze, int startRow, int startCol) {
     int n = maze.size();
     int m = maze[0].size();
-
     vector<vector<bool>> visited(n, vector<bool>(m, false));
     queue<Point> q;
 
